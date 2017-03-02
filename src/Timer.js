@@ -1,4 +1,5 @@
 import React, { Component, PropTypes } from 'react';
+import moment from 'moment';
 
 // Types
 const REGULAR_TYPE = 'regular';
@@ -21,6 +22,9 @@ const READY_TO_STOP_STATE = 'ready_stop';
 // Time
 const DEFAULT_TIME = '00:00:00';
 
+// Limit
+const COUNTDOWN_LIMIT = 0;
+
 let TIMER_OBJ = null;
 
 class Timer extends Component {
@@ -34,7 +38,7 @@ class Timer extends Component {
 
     this.startTimer = this.startTimer.bind(this);
     this.stopTimer = this.stopTimer.bind(this);
-    this.renderTimer = this.renderTimer.bind(this);
+    this.clear = this.clear.bind(this);
     this.tick = this.tick.bind(this);
     this.convertStartTimeToCounter = this.convertStartTimeToCounter.bind(this);
   }
@@ -53,7 +57,16 @@ class Timer extends Component {
   }
 
   convertStartTimeToCounter() {
-    //TODO Convert StartTime String to millis and put in counter
+    const start = this.props.startTime;
+    this.setState({ counter: this.convertTimeToMillis(start) });
+  }
+
+  convertTimeToMillis(time) {
+    if (time) {
+      return moment(time, DEFAULT_PATTERN).millisecond();
+    }
+
+    return null;
   }
 
   startTimer() {
@@ -66,7 +79,7 @@ class Timer extends Component {
   }
 
   stopTimer() {
-    this.setState({ currentState: STOPPED_STATE, counter: 0 });
+    this.setState({ currentState: STOPPED_STATE });
     if (!TIMER_OBJ) {
       clearTimeout(TIMER_OBJ);
     }
@@ -75,48 +88,93 @@ class Timer extends Component {
     }
   }
 
-  tick() {
-    const { counter, currentState } = this.state;
-    const { tickLength, onTick } = this.props;
-    const { tick } = this.tick;
-    if (currentState === STARTED_STATE) {
-      const newCounter = counter + tickLength;
-      this.setState({ counter: newCounter });
-      if (onTick) {
-        onTick();
-      }
-      TIMER_OBJ = setTimeout(() => { tick(); }, tickLength);
+  clear() {
+    this.setState({ currentState: STOPPED_STATE, counter: 0 });
+    if (!TIMER_OBJ) {
+      clearTimeout(TIMER_OBJ);
     }
   }
 
-  renderTimer() {
-    //TODO Convert counter to pattern and return the result string
+  tick() {
+    const { counter, currentState } = this.state;
+    const {
+      tickLength,
+      onTick,
+      type,
+      limit,
+      startTime
+    } = this.props;
+    const { tick } = this.tick;
+
+    if (currentState === STARTED_STATE) {
+      let value = tickLength;
+      let limitValue = this.convertTimeToMillis(limit);
+      if (type === COUNTDOWN_TYPE) {
+        value *= -1;
+        if (!limitValue ||
+          limitValue < COUNTDOWN_LIMIT ||
+          limitValue > this.convertTimeToMillis(startTime)) {
+          limitValue = COUNTDOWN_LIMIT;
+        }
+      }
+
+      const newCounter = counter + value;
+
+      if ((type === COUNTDOWN_TYPE && newCounter > limitValue) ||
+          (type === REGULAR_TYPE &&
+          (newCounter < limitValue || !limitValue))) {
+        this.setState({ counter: newCounter });
+        if (onTick) {
+          onTick();
+        }
+        TIMER_OBJ = setTimeout(() => { tick(); }, tickLength);
+      } else {
+        this.stopTimer();
+      }
+    }
   }
 
   render() {
-    const { onClick, onMouseOver } = this.props;
+    const { onClick, onMouseOver, className, style } = this.props;
     return (
       <span
+        style={style}
+        className={className}
         onClick={onClick}
         onMouseOver={onMouseOver}
       >
-        {this.renderTimer()}
+        {moment(this.state.counter).format(this.props.pattern)}
       </span>
     );
   }
 }
 
+// https://www.ian-thomas.net/custom-proptype-validation-with-react/
+const timePropType = (props, propName, componentName) => {
+  if (props[propName]) {
+    const value = props[propName];
+    return moment(value, DEFAULT_PATTERN).isValid() ?
+      null :
+      new Error(`${propName} in ${componentName} is invalid!
+        Input time data must have 'hh:mm:ss' pattern!`);
+  }
+
+  return null;
+};
+
 Timer.defaultProps = {
   tickLength: ONE_SECOND_TICK,
   pattern: DEFAULT_PATTERN,
-  type: REGULAR_TYPE
+  type: REGULAR_TYPE,
+  startTime: DEFAULT_TIME
 };
 
 Timer.propTypes = {
   tickLength: PropTypes.number,
   pattern: PropTypes.string,
-  type: PropTypes.string,
-  startTime: PropTypes.string,
+  type: PropTypes.oneOf([REGULAR_TYPE, COUNTDOWN_TYPE]),
+  limit: timePropType,
+  startTime: timePropType,
   onStart: PropTypes.func,
   onStop: PropTypes.func,
   onTick: PropTypes.func,
