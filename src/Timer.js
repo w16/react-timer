@@ -6,7 +6,8 @@ const REGULAR_TYPE = 'regular';
 const COUNTDOWN_TYPE = 'countdown';
 
 // Patterns
-const DEFAULT_PATTERN = 'hh:mm:ss';
+const DEFAULT_PATTERN = 'HH:mm:ss';
+const DATE_PATTERN = 'DD/MM/YYYY';
 
 // Tick Lengths
 const ONE_SECOND_TICK = 1000;
@@ -21,6 +22,7 @@ const READY_TO_STOP_STATE = 'ready_stop';
 
 // Time
 const DEFAULT_TIME = '00:00:00';
+const DEFAULT_DATE = moment().format(DATE_PATTERN);
 
 // Limit
 const COUNTDOWN_LIMIT = 0;
@@ -58,23 +60,28 @@ class Timer extends Component {
 
   convertStartTimeToCounter() {
     const start = this.props.startTime;
-    this.setState({ counter: this.convertTimeToMillis(start) });
+    this.setState({
+      counter: this.convertTimeToMillis(`${DEFAULT_DATE} ${start}`)
+    });
   }
 
   convertTimeToMillis(time) {
     if (time) {
-      return moment(time, DEFAULT_PATTERN).millisecond();
+      const milis = moment(time, `${DATE_PATTERN} ${DEFAULT_PATTERN}`).valueOf();
+      return milis;
     }
 
     return null;
   }
 
   startTimer() {
-    const { tick } = this.tick;
-    this.setState({ currentState: STARTED_STATE });
-    TIMER_OBJ = setTimeout(() => { tick(); }, this.props.tickLength);
-    if (this.props.onStart) {
-      this.props.onStart();
+    if (this.state.currentState !== STARTED_STATE) {
+      const tick = this.tick;
+      this.setState({ currentState: STARTED_STATE });
+      TIMER_OBJ = setTimeout(() => { tick(); }, this.props.tickLength);
+      if (this.props.onStart) {
+        this.props.onStart();
+      }
     }
   }
 
@@ -89,7 +96,8 @@ class Timer extends Component {
   }
 
   clear() {
-    this.setState({ currentState: STOPPED_STATE, counter: 0 });
+    this.setState({ currentState: STOPPED_STATE });
+    this.convertStartTimeToCounter();
     if (!TIMER_OBJ) {
       clearTimeout(TIMER_OBJ);
     }
@@ -104,7 +112,7 @@ class Timer extends Component {
       limit,
       startTime
     } = this.props;
-    const { tick } = this.tick;
+    const tick = this.tick;
 
     if (currentState === STARTED_STATE) {
       let value = tickLength;
@@ -156,7 +164,7 @@ const timePropType = (props, propName, componentName) => {
     return moment(value, DEFAULT_PATTERN).isValid() ?
       null :
       new Error(`${propName} in ${componentName} is invalid!
-        Input time data must have 'hh:mm:ss' pattern!`);
+        Input time data must have 'HH:mm:ss' pattern!`);
   }
 
   return null;
