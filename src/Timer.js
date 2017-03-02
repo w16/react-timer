@@ -56,6 +56,15 @@ class Timer extends Component {
     } else if (currentState === READY_TO_STOP_STATE) {
       this.stopTimer();
     }
+    if (this.props.onExit) {
+      window.onbeforeunload = this.props.onExit; // eslint-disable-line no-undef
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.props.onExit) {
+      window.onbeforeunload = null; // eslint-disable-line no-undef
+    }
   }
 
   convertStartTimeToCounter() {
@@ -101,6 +110,9 @@ class Timer extends Component {
     if (!TIMER_OBJ) {
       clearTimeout(TIMER_OBJ);
     }
+    if (this.props.onComplete) {
+      this.props.onComplete();
+    }
   }
 
   tick() {
@@ -110,7 +122,8 @@ class Timer extends Component {
       onTick,
       type,
       limit,
-      startTime
+      startTime,
+      onComplete
     } = this.props;
     const tick = this.tick;
 
@@ -138,6 +151,9 @@ class Timer extends Component {
         TIMER_OBJ = setTimeout(() => { tick(); }, tickLength);
       } else {
         this.stopTimer();
+        if (onComplete) {
+          onComplete();
+        }
       }
     }
   }
