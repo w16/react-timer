@@ -42,6 +42,7 @@ class Timer extends Component {
     this.stopTimer = this.stopTimer.bind(this);
     this.clear = this.clear.bind(this);
     this.tick = this.tick.bind(this);
+    this.toggle = this.toggle.bind(this);
     this.convertStartTimeToCounter = this.convertStartTimeToCounter.bind(this);
   }
 
@@ -112,6 +113,15 @@ class Timer extends Component {
     }
     if (this.props.onComplete) {
       this.props.onComplete();
+    }
+  }
+
+  toggle() {
+    const { currentState } = this.state;
+    if (currentState === STOPPED_STATE) {
+      this.startTimer();
+    } else if (currentState === STARTED_STATE) {
+      this.stopTimer();
     }
   }
 
