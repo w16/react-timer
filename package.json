@@ -4,6 +4,10 @@
   "author": "W16 Otimização de Performance Web",
   "description": "Timer component for countdown and chronometer uses",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/w16/react-timer.git"
+  },
   "scripts": {
     "build": "babel src --out-file dist/index.js",
     "prepublish": "npm run build"
@@ -15,7 +19,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.23.0",
-    "babel-core": "^6.23.1", 
+    "babel-core": "^6.23.1",
     "babel-preset-es2015": "^6.22.0",
     "babel-preset-react": "^6.23.0",
     "babel-preset-stage-1": "^6.22.0",
