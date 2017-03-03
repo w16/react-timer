@@ -26,6 +26,7 @@ const DEFAULT_DATE = moment().format(DATE_PATTERN);
 
 // Limit
 const COUNTDOWN_LIMIT = 0;
+const UNLIMITED = -1;
 
 let TIMER_OBJ = null;
 
@@ -35,7 +36,8 @@ class Timer extends Component {
 
     this.state = {
       counter: 0,
-      currentState: STOPPED_STATE
+      currentState: STOPPED_STATE,
+      checkpointMap: {}
     };
 
     this.startTimer = this.startTimer.bind(this);
@@ -43,6 +45,7 @@ class Timer extends Component {
     this.clear = this.clear.bind(this);
     this.tick = this.tick.bind(this);
     this.toggle = this.toggle.bind(this);
+    this.setCheckpoints = this.setCheckpoints.bind(this);
     this.convertStartTimeToCounter = this.convertStartTimeToCounter.bind(this);
   }
 
@@ -68,20 +71,33 @@ class Timer extends Component {
     }
   }
 
+  setCheckpoints() {
+    //TODO build checkpoint count map (checkpoint => countedLimits)
+  }
+
+  handleCheckpoint(checkpoint) {
+    const {
+      props: {
+        onCheckpoint,
+        maxRepeats
+      },
+      state: {
+        interval
+      }
+    } = checkpoint;
+    onCheckpoint();
+    if (maxRepeats === UNLIMITED ||
+      this.state.checkpointMap[checkpoint] <= maxRepeats) {
+    setTimeout(this.handleCheckpoint(checkpoint),
+      interval);
+    }
+  }
+
   convertStartTimeToCounter() {
     const start = this.props.startTime;
     this.setState({
-      counter: this.convertTimeToMillis(`${DEFAULT_DATE} ${start}`)
+      counter: convertTimeToUnix(`${DEFAULT_DATE} ${start}`)
     });
-  }
-
-  convertTimeToMillis(time) {
-    if (time) {
-      const milis = moment(time, `${DATE_PATTERN} ${DEFAULT_PATTERN}`).valueOf();
-      return milis;
-    }
-
-    return null;
   }
 
   startTimer() {
@@ -93,6 +109,7 @@ class Timer extends Component {
         this.props.onStart();
       }
     }
+    this.setCheckpoints();
   }
 
   stopTimer() {
@@ -139,12 +156,12 @@ class Timer extends Component {
 
     if (currentState === STARTED_STATE) {
       let value = tickLength;
-      let limitValue = this.convertTimeToMillis(limit);
+      let limitValue = convertTimeToUnix(limit);
       if (type === COUNTDOWN_TYPE) {
         value *= -1;
         if (!limitValue ||
           limitValue < COUNTDOWN_LIMIT ||
-          limitValue > this.convertTimeToMillis(startTime)) {
+          limitValue > convertTimeToUnix(startTime)) {
           limitValue = COUNTDOWN_LIMIT;
         }
       }
@@ -184,7 +201,7 @@ class Timer extends Component {
 }
 
 // https://www.ian-thomas.net/custom-proptype-validation-with-react/
-const timePropType = (props, propName, componentName) => {
+export const TimePropType = (props, propName, componentName) => {
   if (props[propName]) {
     const value = props[propName];
     return moment(value, DEFAULT_PATTERN).isValid() ?
@@ -207,8 +224,8 @@ Timer.propTypes = {
   tickLength: PropTypes.number,
   pattern: PropTypes.string,
   type: PropTypes.oneOf([REGULAR_TYPE, COUNTDOWN_TYPE]),
-  limit: timePropType,
-  startTime: timePropType,
+  limit: TimePropType,
+  startTime: TimePropType,
   onStart: PropTypes.func,
   onStop: PropTypes.func,
   onTick: PropTypes.func,
@@ -216,6 +233,15 @@ Timer.propTypes = {
   onClick: PropTypes.func,
   onMouseOver: PropTypes.func,
   onExit: PropTypes.func,
+};
+
+const convertTimeToUnix = (time) => {
+  if (time) {
+    const milis = moment(time, `${DATE_PATTERN} ${DEFAULT_PATTERN}`).valueOf();
+    return milis;
+  }
+
+  return null;
 };
 
 export default Timer;
@@ -239,4 +265,8 @@ export const Tick = {
 
 export const Time = {
   default: DEFAULT_TIME
+};
+
+export const Limit = {
+  unlimited: UNLIMITED
 };
