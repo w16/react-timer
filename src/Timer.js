@@ -72,7 +72,16 @@ class Timer extends Component {
   }
 
   setCheckpoints() {
-    //TODO build checkpoint count map (checkpoint => countedLimits)
+    if (this.props.children.length) {
+      const checkpointMap = {};
+      this.props.children.forEach((checkpoint) => {
+        checkpointMap[checkpoint] = 0;
+      });
+      this.setState({ checkpointMap });
+      this.props.children.forEach((checkpoint) => {
+        this.handleCheckpoint(checkpoint);
+      });
+    }
   }
 
   handleCheckpoint(checkpoint) {
@@ -85,11 +94,14 @@ class Timer extends Component {
         interval
       }
     } = checkpoint;
+    const { checkpointMap } = this.state;
     onCheckpoint();
     if (maxRepeats === UNLIMITED ||
-      this.state.checkpointMap[checkpoint] <= maxRepeats) {
-    setTimeout(this.handleCheckpoint(checkpoint),
-      interval);
+      checkpointMap[checkpoint] <= maxRepeats) {
+      checkpointMap[checkpoint] += 1;
+      this.setState({ checkpointMap });
+      setTimeout(this.handleCheckpoint(checkpoint),
+        interval);
     }
   }
 
