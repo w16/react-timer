@@ -30,7 +30,7 @@ const UNLIMITED = -1;
 
 let TIMER_OBJ = null;
 
-class Timer extends Component {
+export class Timer extends Component {
   constructor(props) {
     super(props);
 
@@ -72,7 +72,7 @@ class Timer extends Component {
   }
 
   setCheckpoints() {
-    if (this.props.children.length) {
+    if (this.props.children) {
       const checkpointMap = {};
       this.props.children.forEach((checkpoint) => {
         checkpointMap[checkpoint] = 0;
@@ -255,8 +255,6 @@ const convertTimeToUnix = (time) => {
 
   return null;
 };
-
-export default Timer;
 
 export const Type = {
   regular: REGULAR_TYPE,
